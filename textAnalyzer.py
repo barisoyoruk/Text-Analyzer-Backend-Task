@@ -36,7 +36,7 @@ def getNumberOfLetters(text):
 # Function takes O(n) time where n is the length of the text
 def getLongestWord(text):
 	wordsList = extractWordsFromText(text)
-	maxLength = -1
+	maxLength = 0
 	maxWord = ''
 
 	for word in wordsList:
@@ -47,7 +47,11 @@ def getLongestWord(text):
 	return maxWord
 
 def getAverageWordLength(text):
-	return getNumberOfLetters(text) / getWordCount(text)
+	wordCount = getWordCount(text)
+	if wordCount == 0:	# Prevent division by zero
+		return 0;
+	else:
+		return round(getNumberOfLetters(text) / getWordCount(text), 2) 
 
 import math
 
@@ -63,34 +67,19 @@ def getReadingDurationInSeconds(text, WORDS_PER_MINUTE = 200):
 
 	return str(minutes) + 'm' + str(seconds) + 's'
 
-
-
 # A function that returns the median word length
-# Function takes O(n) time where n is the length of the text
+# Function takes O(n*logn) time where n is the length of the text
+# Not sure if task is to find the median word length without sorting, but sorting makes more sense.
 def getMedianWordLength(text):
 	wordsList = extractWordsFromText(text)
-	wordCount = len(wordsList)
-	mid = math.floor(wordCount / 2)
-
-	# If there are even numbers of words then the median value will be the avarage of the middle two words' lengths
-	if wordCount % 2 == 0:
-		medianWordLength = (len(wordsList[mid]) + len(wordsList[mid - 1])) / 2
-	# If there are odd numbers of words than the median value will be the middle word's length
-	else:
-		medianWordLength = len(wordsList[mid])
-
-	return medianWordLength
-
-# A function that returns the median word length when the words are sorted by their length
-# Function takes O(n) time where n is the length of the text
-def getSortedMedianWordLength(text):
-	wordsList = extractWordsFromText(text)
 	sortedWordsList = sorted(wordsList, key=len)
-
 	wordCount = len(sortedWordsList)
 	mid = math.floor(wordCount / 2)
 
-	# If there are even numbers of words than the median value will be the avarage of the middle two words' lengths
+	if wordCount == 0:	# To prevent bound problems
+		return 0
+
+	# If there are even numbers of words then the median value will be the avarage of the middle two words' lengths
 	if wordCount % 2 == 0:
 		medianWordLength = (len(sortedWordsList[mid]) + len(sortedWordsList[mid - 1])) / 2
 	# If there are odd numbers of words than the median value will be the middle word's length
@@ -99,8 +88,26 @@ def getSortedMedianWordLength(text):
 
 	return medianWordLength
 
+# A function that returns the median word length when the words are sorted by their length
+# Function takes O(n*logn) time where n is the length of the text
+def getMedianWord(text):
+	wordsList = extractWordsFromText(text)
+	sortedWordsList = sorted(wordsList, key=len)
+	wordCount = len(sortedWordsList)
+	mid = math.floor(wordCount / 2)
+
+	if wordCount == 0:	# To prevent bound problems
+		return ""
+
+	return sortedWordsList[mid]
+
+# A function that returns the median word length when the words are sorted by their length
+# Function takes O(n) time where n is the length of the text
 def getTopFiveMostCommonWords(text):
 	wordsList = extractWordsFromText(text)
+
+	if len(wordsList) < 6:
+		return wordsList
 
 	wordsDict = {}
 	for word in wordsList:
@@ -112,7 +119,7 @@ def getTopFiveMostCommonWords(text):
 	return wordsDict
 
 # A function that guess the text language for english/turkish based on the stop words
-# Function takes O(n) time where n is the length of the text (Stop words stored as sets (hash tables))
+# Function takes O(n) time where n is the length of the text (Stop words stored as sets (hash tables). Retrival is O(1))
 def guessTextLanguage(text):
 	wordsList = extractWordsFromText(text)
 
@@ -122,7 +129,7 @@ def guessTextLanguage(text):
 		elif word in stopWordsForTR:
 			return 'tr'
 
-	return ''
+	return 'en/tr'	# If not possible to detect, its either en or tr
 
 # Stop words taken from the https://www.ranks.nl/stopwords
 stopWordsForEN = {	'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 
@@ -141,13 +148,36 @@ stopWordsForTR = {	'acaba', 'altmış', 'altı', 'ama', 'bana', 'bazı', 'belki'
 					'trilyon', 'tüm', 've', 'veya', 'ya', 'yani', 'yedi', 'yetmiş', 'yirmi', 'yüz', 'çok', 'çünkü', 'üç', 'şey', 'şeyden', 'şeyi', 'şeyler', 'şu', 'şuna', 'şunda', 'şundan', 'şunu'
 				 }
 
-def test(text):
-	print('Word count: ' + str(getWordCount(text)))
-	print('Number of letters: ' + str(getNumberOfLetters(text)))
-	print('The longest word: ' + getLongestWord(text))
-	print('Average Word Length: ' + str(getAverageWordLength(text)))
-	print('Reading Duration: ' + str(getReadingDurationInSeconds(text)))
-	print('Median Word Length: ' + str(getMedianWordLength(text)))
-	print('Sorted Median Word Length: ' + str(getSortedMedianWordLength(text)))
-	#print(getTopFiveMostCommonWords(text))
-	print('Text Language: ' + guessTextLanguage(text))
+def analyzeText(text, filters = None):
+	if filters == None:
+		result = {
+					'wordCount': getWordCount(text),
+					'letters': getNumberOfLetters(text),
+					'longest': getLongestWord(text),
+					'avgLength': getAverageWordLength(text),
+					'duration': getReadingDurationInSeconds(text),
+					'medianWordLength': getMedianWordLength(text),
+					'medianWord': getMedianWord(text),
+					'language': guessTextLanguage(text)
+		}
+		return result
+	else:
+		result = {}
+		for filter_ in filters:
+			if filter_ == 'wordCount':
+				result["wordCount"]  = getWordCount(text)
+			elif filter_ == 'letters':
+				result["letters"]  = getNumberOfLetters(text)
+			elif filter_ == 'longest':
+				result["longest"]  = getLongestWord(text)
+			elif filter_ == 'avgLength':
+				result["avgLength"]  = getAverageWordLength(text)
+			elif filter_ == 'duration':
+				result["duration"]  = getReadingDurationInSeconds(text)
+			elif filter_ == 'medianWordLength':
+				result["medianWordLength"]  = getMedianWordLength(text)
+			elif filter_ == 'medianWord':
+				result["medianWord"]  = getMedianWord(text)
+			elif filter_ == 'language':
+				result["language"]  = guessTextLanguage(text)
+		return result
