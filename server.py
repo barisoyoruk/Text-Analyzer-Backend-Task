@@ -1,5 +1,6 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import cgi
+from urllib.parse import parse_qs
 import json
 
 from textAnalyzer import analyzeText
@@ -13,32 +14,36 @@ class TextAnalyzerHandler(BaseHTTPRequestHandler):
 	def do_POST(self):
 		try:
 			if self.path == '/analyze':
-				ctype, pdict = cgi.parse_header(self.headers.get('Content-Type'))
-
-				# Library related issue
-				if type(pdict['boundary']) != 'bytes':
-					pdict['boundary'] = bytes(pdict['boundary'], "ascii")
-				
+				ctype, pdict = cgi.parse_header(self.headers.get('Content-Type'))				
 
 				if ctype == 'multipart/form-data':
+					# Library related issue
+					if type(pdict['boundary']) != 'bytes':
+						pdict['boundary'] = bytes(pdict['boundary'], "ascii")
 					postvars = cgi.parse_multipart(self.rfile, pdict)
 				elif ctype == 'application/x-www-form-urlencoded':
 					length = int(self.headers.get('Content-Length'))
-					postvars = cgi.parse_qs(self.rfile.read(length), keep_blank_values=1)
+					postvars = parse_qs(self.rfile.read(length), keep_blank_values=1)
+
+					if bytes('text', 'utf-8') in postvars.keys():
+						postvars['text'] = [postvars[bytes('text', 'utf-8')][0].decode('utf-8')]
+
+					if bytes('analysis', 'utf-8') in postvars.keys():
+						postvars['analysis'] = [postvars[bytes('analysis', 'utf-8')][0].decode('utf-8')]
 				else:
 					postvars = {}
 
-				try:
+				if 'text' in postvars.keys():
 					text = postvars['text'][0].replace('\\n', '\n')	# JSON does not allow new line char '\ns'. We should replace manually
-				except:
+				else:
 					self.set_response(400)
 					error_str = 'Error: Text is not given'
 					self.wfile.write(error_str.encode(encoding='utf_8'))
 					return
 
-				try:
+				if 'analysis' in postvars.keys():
 					filters = json.loads(postvars['analysis'][0])
-				except:
+				else:
 					filters = None
 
 				response_str = json.dumps(analyzeText(text, filters))
