@@ -101,22 +101,28 @@ def getMedianWord(text):
 
 	return sortedWordsList[mid]
 
+from collections import Counter 
+
 # A function that returns the median word length when the words are sorted by their length
 # Function takes O(n) time where n is the length of the text
 def getTopFiveMostCommonWords(text):
 	wordsList = extractWordsFromText(text)
 
-	if len(wordsList) < 6:
-		return wordsList
+	#if len(wordsList) < 6:
+	#	return wordsList
 
-	wordsDict = {}
-	for word in wordsList:
-		if word in wordsDict:
-			wordsDict[word] += 1
-		else:
-			wordsDict[word] = 1
+	most_occur = Counter(wordsList).most_common(5)
 
-	return wordsDict
+	#wordsDict = {}
+	#for word in wordsList:
+	#	if word in wordsDict:
+	#		wordsDict[word] += 1
+	#	else:
+	#		wordsDict[word] = 1
+
+
+
+	return most_occur
 
 # A function that guess the text language for english/turkish based on the stop words
 # Function takes O(n) time where n is the length of the text (Stop words stored as sets (hash tables). Retrival is O(1))
@@ -158,7 +164,8 @@ def analyzeText(text, filters = None):
 					'duration': getReadingDurationInSeconds(text),
 					'medianWordLength': getMedianWordLength(text),
 					'medianWord': getMedianWord(text),
-					'language': guessTextLanguage(text)
+					'language': guessTextLanguage(text),
+					'mostCommonFiveWords': getTopFiveMostCommonWords(text),
 		}
 		return result
 	else:
@@ -180,4 +187,6 @@ def analyzeText(text, filters = None):
 				result["medianWord"]  = getMedianWord(text)
 			elif filter_ == 'language':
 				result["language"]  = guessTextLanguage(text)
+			elif filter_ == 'mostCommonFiveWords':
+				result["mostCommonFiveWords"] = getTopFiveMostCommonWords(text)
 		return result
